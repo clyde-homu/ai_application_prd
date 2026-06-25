@@ -43,8 +43,8 @@ seed.py            Seed team users + a demo client
 templates/         UI + report partials (_sacs_body, _tcc_body shared by preview & PDF)
 static/            style.css, app.js (live totals, dynamic account rows)
 tests/             pytest for the calculation rules
-nixpacks.toml      Native libs WeasyPrint needs on Railway
-railway.json       Railway build/deploy config
+Dockerfile         Build image with WeasyPrint's native libs (Pango/Cairo/GLib)
+railway.json       Railway build/deploy config (points at the Dockerfile)
 ```
 
 ## Local development
@@ -107,32 +107,30 @@ pytest
 
 ## Deploy to Railway
 
-Follows the standard Railway flow (the steps in `RAILWAY.pdf`):
+The app is built from the `Dockerfile` (which installs WeasyPrint's native
+libraries), so PDF generation works out of the box. `railway.json` points the
+build at the Dockerfile; the container's `CMD` starts gunicorn and binds `$PORT`.
 
 1. **Push this repo to GitHub** (already wired to `clyde-homu/ai_application_prd`).
 2. In Railway: **New Project → Deploy from GitHub repo** → pick the repo. Railway
-   detects `nixpacks.toml` / `railway.json` and builds automatically.
-3. **Add a Volume** to the service and set its mount path to `/data` (this keeps
-   the SQLite database across redeploys).
+   builds the Dockerfile automatically.
+3. **Add a Volume** to the service, mount path `/data` (keeps the SQLite database
+   across redeploys).
 4. **Variables** → add:
    - `SECRET_KEY` = a long random value
    - `RAILWAY_DATABASE_PATH` = `/data/portal.db`
    - `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` (your first login)
-5. Railway builds and starts `gunicorn app:app`. On first boot the database is
-   created and the admin user is seeded. **Settings → Networking → Generate
-   Domain** to get a public URL.
-6. (Optional) Open the service shell and run `python seed.py --no-demo` to add the
-   other team members.
-7. **Smoke test**: open the domain, log in, create a client, generate a report,
-   download the SACS and TCC PDFs.
+   - `SEED_TEAM_PASSWORD` (shared password for the seeded team)
+   - `SEED_DEMO=1` (optional) — on boot, idempotently seed the full team **and** a
+     demo client so reviewers have data to explore.
+5. **Settings → Networking → Generate Domain** for a public URL.
+6. **Smoke test**: open the domain, log in, open the demo client (or create one),
+   generate a report, download the SACS and TCC PDFs.
 
-### Dockerfile fallback
-
-If a future Nixpacks base can't resolve the Pango/Cairo packages, switch the
-builder to a Dockerfile based on `python:3.11-slim` and `apt-get install -y
-libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf-2.0-0 libcairo2 libffi-dev
-shared-mime-info fonts-liberation`, then `pip install -r requirements.txt` and
-run the same gunicorn command.
+> Deploying from the local CLI instead? `railway up` builds the same Dockerfile.
+> Note: when using a Dockerfile, do **not** set a `startCommand` in `railway.json` —
+> Railway runs it without a shell, so `$PORT` wouldn't expand. Let the Dockerfile
+> `CMD` (which uses `sh -c`) handle startup.
 
 ## Out of scope (V2)
 
