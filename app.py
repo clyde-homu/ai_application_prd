@@ -136,6 +136,13 @@ def create_app() -> Flask:
     with app.app_context():
         db.create_all()
         ensure_seed_user()
+        if os.environ.get("SEED_DEMO") == "1":
+            # Idempotent — populates the full team + a demo client on a fresh
+            # deploy so reviewers have data to explore. Safe to leave enabled.
+            from seeding import seed_demo_client, seed_users
+
+            seed_users()
+            seed_demo_client()
 
     return app
 
