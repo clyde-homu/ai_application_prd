@@ -1,0 +1,73 @@
+<div class="report-doc">
+  <div class="rpt-header">
+    <div class="rpt-kind">Simple Automated Cash Flow · SACS</div>
+    <h1>{{ client.display_name }}</h1>
+    <div class="rpt-date">{{ report.report_date.strftime('%B %d, %Y') }}</div>
+  </div>
+
+  <div class="sacs-diagram">
+    <svg viewBox="0 0 760 360" width="720" height="341" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="ar-red" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto">
+          <path d="M0,0 L7,3 L0,6 Z" fill="#c0392b"/>
+        </marker>
+        <marker id="ar-blue" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto">
+          <path d="M0,0 L7,3 L0,6 Z" fill="#2b6cb0"/>
+        </marker>
+      </defs>
+
+      <!-- connecting arrows -->
+      <line x1="218" y1="185" x2="312" y2="185" stroke="#c0392b" stroke-width="4" marker-end="url(#ar-red)"/>
+      <!-- X over the outflow arrow (money spent / leaves) -->
+      <g stroke="#c0392b" stroke-width="4">
+        <line x1="258" y1="170" x2="272" y2="200"/>
+        <line x1="272" y1="170" x2="258" y2="200"/>
+      </g>
+      <line x1="488" y1="185" x2="578" y2="185" stroke="#2b6cb0" stroke-width="4" marker-end="url(#ar-blue)"/>
+
+      <!-- Inflow (green) -->
+      <circle cx="130" cy="185" r="88" fill="#2e8b57"/>
+      <text x="130" y="178" text-anchor="middle" fill="#fff" font-size="26" font-weight="700"
+            font-family="Helvetica, Arial, sans-serif">{{ c.inflow|money }}</text>
+      <text x="130" y="202" text-anchor="middle" fill="#eafff2" font-size="13"
+            font-family="Helvetica, Arial, sans-serif">Inflow / mo</text>
+
+      <!-- Outflow (red) -->
+      <circle cx="400" cy="185" r="88" fill="#c0392b"/>
+      <text x="400" y="178" text-anchor="middle" fill="#fff" font-size="26" font-weight="700"
+            font-family="Helvetica, Arial, sans-serif">{{ c.outflow|money }}</text>
+      <text x="400" y="202" text-anchor="middle" fill="#ffeceb" font-size="13"
+            font-family="Helvetica, Arial, sans-serif">Outflow / mo</text>
+
+      <!-- Private Reserve (blue) -->
+      <circle cx="660" cy="185" r="84" fill="#1f4e79"/>
+      <text x="660" y="172" text-anchor="middle" fill="#fff" font-size="24" font-weight="700"
+            font-family="Helvetica, Arial, sans-serif">{{ c.excess|money }}</text>
+      <text x="660" y="194" text-anchor="middle" fill="#dbe7f5" font-size="12"
+            font-family="Helvetica, Arial, sans-serif">Excess to</text>
+      <text x="660" y="210" text-anchor="middle" fill="#dbe7f5" font-size="12"
+            font-family="Helvetica, Arial, sans-serif">Private Reserve</text>
+    </svg>
+  </div>
+  <div class="sacs-caption">
+    <span>Take-home pay deposited monthly.</span>
+    <span>Agreed expense budget transferred out.</span>
+    <span>What's left accumulates as savings.</span>
+  </div>
+
+  <div class="rpt-section-title">Reserve &amp; Investments</div>
+  <div class="sacs-cards">
+    <div class="sacs-card">
+      <div class="lbl">Private Reserve Balance</div>
+      <div class="val">{{ report.private_reserve_balance|money }}</div>
+    </div>
+    <div class="sacs-card">
+      <div class="lbl">Investment Balance (Schwab)</div>
+      <div class="val">{{ report.schwab_investment_balance|money }}</div>
+    </div>
+    <div class="sacs-card">
+      <div class="lbl">Target Savings</div>
+      <div class="val">{{ c.private_reserve_target|money }}</div>
+    </div>
+  </div>
+</div>

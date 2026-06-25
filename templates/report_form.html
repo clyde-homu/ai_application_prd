@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Generate report · {{ client.display_name }}{% endblock %}
+
+{% macro balance_input(acct) %}
+{% set last = last_balances.get(acct.id) %}
+<div class="balance-row">
+  <label class="balance-label">
+    {{ acct.type }}{% if acct.acct_last4 %} ····{{ acct.acct_last4 }}{% endif %}
+    <span class="muted">({{ acct.owner|title }})</span>
+  </label>
+  <div class="balance-input">
+    <input type="text" inputmode="decimal" name="balance_{{ acct.id }}" required
+           class="amount js-balance" data-category="{{ acct.category }}" data-owner="{{ acct.owner }}"
+           {% if last %}data-last="{{ last.balance|round(2) }}"{% endif %}>
+    {% if last %}
+    <button type="button" class="use-last" data-target="balance_{{ acct.id }}"
+            data-value="{{ last.balance|round(2) }}">Use {{ last.balance|money }}</button>
+    {% endif %}
+  </div>
+  {% if acct.is_investment %}
+  <div class="balance-input sub">
+    <span class="sub-label">Cash balance</span>
+    <input type="text" inputmode="decimal" name="cash_{{ acct.id }}" class="amount"
+           {% if last and last.cash_balance is not none %}data-last="{{ last.cash_balance|round(2) }}"{% endif %}>
+  </div>
+  {% endif %}
+</div>
+{% endmacro %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Generate report</h1>
+    <p class="muted">{{ client.display_name }}
+      {% if last %}· last report {{ last.report_date.strftime('%b %d, %Y') }}{% endif %}
+    </p>
+  </div>
+  <a class="btn-ghost" href="{{ url_for('client_detail', client_id=client.id) }}">Cancel</a>
+</div>
+
+<form method="post" class="report-grid" id="report-form">
+  <div class="report-main stack">
+    <div class="card">
+      <label class="inline">Report date
+        <input type="date" name="report_date" value="{{ today }}">
+      </label>
+    </div>
+
+    <div class="card">
+      <h2>SACS · Cash flow</h2>
+      <div class="grid-2">
+        <label>Inflow (monthly)
+          <input type="text" inputmode="decimal" id="inflow" name="inflow" class="amount"
+                 value="{{ client.monthly_salary|round(0)|int if client.monthly_salary else '' }}">
+        </label>
+        <label>Outflow (monthly)
+          <input type="text" inputmode="decimal" id="outflow" name="outflow" class="amount"
+                 value="{{ client.monthly_expense_budget|round(0)|int if client.monthly_expense_budget else '' }}">
+        </label>
+        <label>Insurance deductibles
+          <input type="text" inputmode="decimal" id="deductibles" name="insurance_deductibles" class="amount"
+                 value="{{ client.insurance_deductibles|round(0)|int if client.insurance_deductibles else '' }}">
+        </label>
+        <label>Private reserve balance (current)
+          <input type="text" inputmode="decimal" name="private_reserve_balance" class="amount"
+                 {% if last %}data-last="{{ last.private_reserve_balance|round(2) }}"{% endif %}>
+        </label>
+        <label>Schwab / investment balance (SACS p.2)
+          <input type="text" inputmode="decimal" name="schwab_investment_balance" class="amount"
+                 {% if last %}data-last="{{ last.schwab_investment_balance|round(2) }}"{% endif %}>
+        </label>
+        <label>Home value — Zillow (trust)
+          <input type="text" inputmode="decimal" id="home_value" name="home_value" class="amount js-trust"
+                 {% if last %}data-last="{{ last.home_value|round(2) }}"{% endif %}>
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>TCC · Account balances</h2>
+      {% set g = {
+        'Client 1 retirement': client.accounts|selectattr('category','equalto','retirement')|selectattr('owner','equalto','client1')|list,
+        'Client 2 retirement': client.accounts|selectattr('category','equalto','retirement')|selectattr('owner','equalto','client2')|list,
+        'Non-retirement': client.accounts|selectattr('category','equalto','non_retirement')|list,
+        'Trust accounts': client.accounts|selectattr('category','equalto','trust')|list,
+        'Liabilities': client.accounts|selectattr('category','equalto','liability')|list,
+      } %}
+      {% for section, accts in g.items() %}
+        {% if accts %}
+        <div class="balance-section">
+          <h3>{{ section }}</h3>
+          {% for acct in accts %}{{ balance_input(acct) }}{% endfor %}
+        </div>
+        {% endif %}
+      {% endfor %}
+      {% if last_balances %}
+      <button type="button" class="btn-secondary" id="use-all-last">Use last quarter's values for all blanks</button>
+      {% endif %}
+    </div>
+  </div>
+
+  <aside class="report-side">
+    <div class="card live-totals" id="live-totals">
+      <h2>Live totals</h2>
+      <div class="lt"><span>Excess to reserve</span><strong data-lt="excess">$0</strong></div>
+      <div class="lt"><span>Reserve target</span><strong data-lt="target">$0</strong></div>
+      <hr>
+      <div class="lt"><span>Client 1 retirement</span><strong data-lt="c1">$0</strong></div>
+      <div class="lt"><span>Client 2 retirement</span><strong data-lt="c2">$0</strong></div>
+      <div class="lt"><span>Non-retirement</span><strong data-lt="nonret">$0</strong></div>
+      <div class="lt"><span>Trust</span><strong data-lt="trust">$0</strong></div>
+      <div class="lt total"><span>Grand total net worth</span><strong data-lt="grand">$0</strong></div>
+      <div class="lt"><span>Liabilities (separate)</span><strong data-lt="liab">$0</strong></div>
+      <button type="submit" class="btn-primary full">Generate report</button>
+    </div>
+  </aside>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+<script>initReportForm();</script>
+{% endblock %}

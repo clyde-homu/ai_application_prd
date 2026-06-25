@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Clients · AW Client Report Portal{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Clients</h1>
+    <p class="muted">{{ clients|length }} client{{ '' if clients|length == 1 else 's' }} on file</p>
+  </div>
+  <a class="btn-primary" href="{{ url_for('client_new') }}">+ New client</a>
+</div>
+
+{% if clients %}
+<div class="card">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Client</th>
+        <th>Accounts</th>
+        <th>Last report</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for client in clients %}
+      <tr>
+        <td>
+          <a class="cell-link" href="{{ url_for('client_detail', client_id=client.id) }}">
+            {{ client.display_name }}
+          </a>
+        </td>
+        <td>{{ client.accounts|length }}</td>
+        <td>
+          {% if client.last_report_date %}
+            {{ client.last_report_date.strftime('%b %d, %Y') }}
+          {% else %}
+            <span class="muted">No reports yet</span>
+          {% endif %}
+        </td>
+        <td class="row-actions">
+          <a href="{{ url_for('report_new', client_id=client.id) }}">Generate report</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card empty">
+  <p>No clients yet.</p>
+  <a class="btn-primary" href="{{ url_for('client_new') }}">Add your first client</a>
+</div>
+{% endif %}
+{% endblock %}

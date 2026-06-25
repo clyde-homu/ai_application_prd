@@ -1,0 +1,9 @@
+{% macro acct_bubble(a) %}
+<div class="acct-bubble">
+  <div class="t">{{ a.type }}{% if a.acct_last4 %} ····{{ a.acct_last4 }}{% endif %}</div>
+  <div class="b">{{ a.balance|money }}</div>
+  {% if a.is_investment and a.cash_balance is not none %}
+  <div class="sub">Cash: {{ a.cash_balance|money }}</div>
+  {% endif %}
+</div>
+{% endmacro %}

@@ -1,0 +1,65 @@
+<style>
+  /* Shared report visual styles — used inline by the PDF templates AND by the
+     on-screen preview, so the printed PDF and the browser preview match. */
+  .report-doc {
+    --blue: #1f4e79;     /* company branding blue */
+    --blue-soft: #2b6cb0;
+    --green: #2e8b57;
+    --red: #c0392b;
+    --gray: #6b7280;
+    --gray-soft: #eef1f5;
+    --ink: #1f2933;
+    color: var(--ink);
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    width: 720px;
+    margin: 0 auto;
+  }
+  .report-doc * { box-sizing: border-box; }
+
+  .rpt-header {
+    border-bottom: 3px solid var(--blue);
+    padding-bottom: 10px;
+    margin-bottom: 18px;
+  }
+  .rpt-header .rpt-kind { color: var(--blue); font-size: 13px; letter-spacing: 2px; text-transform: uppercase; font-weight: 700; }
+  .rpt-header h1 { margin: 4px 0 0; font-size: 26px; }
+  .rpt-header .rpt-date { color: var(--gray); font-size: 13px; margin-top: 2px; }
+
+  .rpt-section-title { color: var(--blue); font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin: 22px 0 10px; border-bottom: 1px solid #d7dde5; padding-bottom: 4px; }
+
+  /* SACS diagram */
+  .sacs-diagram { text-align: center; margin: 10px 0 4px; }
+  .sacs-caption { display: flex; justify-content: space-between; width: 680px; margin: 0 auto; color: var(--gray); font-size: 12px; }
+  .sacs-caption span { width: 33%; }
+
+  .sacs-cards { display: flex; gap: 16px; margin-top: 26px; }
+  .sacs-card { flex: 1; border: 1px solid #d7dde5; border-radius: 10px; padding: 16px; text-align: center; }
+  .sacs-card .lbl { color: var(--gray); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+  .sacs-card .val { font-size: 24px; font-weight: 700; color: var(--blue); margin-top: 6px; }
+
+  /* TCC bubbles + boxes */
+  .info-row { display: flex; gap: 14px; margin-bottom: 6px; }
+  .info-bubble { background: var(--green); color: #fff; border-radius: 12px; padding: 12px 16px; min-width: 220px; }
+  .info-bubble .nm { font-weight: 700; font-size: 15px; }
+  .info-bubble .meta { font-size: 12px; opacity: .92; margin-top: 3px; line-height: 1.5; }
+
+  .tcc-columns { display: flex; gap: 18px; }
+  .tcc-col { flex: 1; }
+
+  .bubble-wrap { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0; }
+  .acct-bubble { border: 2px solid var(--blue); border-radius: 14px; padding: 10px 14px; min-width: 150px; }
+  .acct-bubble.liab { border-color: var(--red); }
+  .acct-bubble.trust { border-color: var(--green); }
+  .acct-bubble .t { font-weight: 600; font-size: 13px; }
+  .acct-bubble .b { font-size: 17px; font-weight: 700; color: var(--blue); margin-top: 3px; }
+  .acct-bubble .sub { font-size: 11px; color: var(--gray); margin-top: 2px; }
+  .acct-bubble.liab .b { color: var(--red); }
+
+  .summary-box { background: var(--gray-soft); border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; margin: 6px 0; }
+  .summary-box .s-lbl { color: var(--gray); font-size: 13px; text-transform: uppercase; letter-spacing: .5px; }
+  .summary-box .s-val { font-size: 20px; font-weight: 700; color: var(--ink); }
+  .summary-box.grand { background: var(--blue); }
+  .summary-box.grand .s-lbl, .summary-box.grand .s-val { color: #fff; }
+
+  .empty-note { color: var(--gray); font-size: 12px; font-style: italic; }
+</style>

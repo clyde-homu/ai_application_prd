@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}{{ client.display_name }} · AW Client Report Portal{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ client.display_name }}</h1>
+    <p class="muted">
+      {% if client.client1_age is not none %}{{ client.client1_name }}, {{ client.client1_age }}{% endif %}
+      {% if client.married and client.client2_name %} · {{ client.client2_name }}{% if client.client2_age is not none %}, {{ client.client2_age }}{% endif %}{% endif %}
+    </p>
+  </div>
+  <div class="head-actions">
+    <a class="btn-ghost" href="{{ url_for('client_edit', client_id=client.id) }}">Edit</a>
+    <a class="btn-primary" href="{{ url_for('report_new', client_id=client.id) }}">Generate report</a>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h2>Static financials</h2>
+    <dl class="kv">
+      <dt>Monthly inflow (salary)</dt><dd>{{ client.monthly_salary|money }}</dd>
+      <dt>Monthly outflow (budget)</dt><dd>{{ client.monthly_expense_budget|money }}</dd>
+      <dt>Insurance deductibles</dt><dd>{{ client.insurance_deductibles|money }}</dd>
+      <dt>Trust property</dt><dd>{{ client.trust_address or '—' }}</dd>
+    </dl>
+  </div>
+
+  <div class="card">
+    <h2>Accounts <span class="muted">({{ client.accounts|length }})</span></h2>
+    {% if client.accounts %}
+    <table class="data-table tight">
+      <tbody>
+        {% for acct in client.accounts %}
+        <tr>
+          <td>{{ acct.type }}{% if acct.acct_last4 %} ····{{ acct.acct_last4 }}{% endif %}</td>
+          <td class="muted">{{ acct.category.replace('_',' ')|title }}</td>
+          <td class="muted">{{ acct.owner|title }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No accounts yet. <a href="{{ url_for('client_edit', client_id=client.id) }}">Add accounts</a></p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <h2>Report history</h2>
+  {% if client.reports %}
+  <table class="data-table">
+    <thead>
+      <tr><th>Report date</th><th>Net worth</th><th>Created</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for report in client.reports %}
+      <tr>
+        <td>
+          <a class="cell-link" href="{{ url_for('report_preview', report_id=report.id) }}">
+            {{ report.report_date.strftime('%b %d, %Y') }}
+          </a>
+        </td>
+        <td>{{ report.computed().grand_total|money }}</td>
+        <td class="muted">{{ report.created_at.strftime('%b %d, %Y') }}</td>
+        <td class="row-actions">
+          <a href="{{ url_for('report_preview', report_id=report.id) }}">Preview</a>
+          <a href="{{ url_for('report_sacs_pdf', report_id=report.id) }}">SACS PDF</a>
+          <a href="{{ url_for('report_tcc_pdf', report_id=report.id) }}">TCC PDF</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No reports yet. <a href="{{ url_for('report_new', client_id=client.id) }}">Generate the first one</a>.</p>
+  {% endif %}
+</div>
+
+<form method="post" action="{{ url_for('client_delete', client_id=client.id) }}"
+      class="danger-zone" onsubmit="return confirm('Delete {{ client.display_name }} and all reports?');">
+  <button type="submit" class="btn-danger-link">Delete client</button>
+</form>
+{% endblock %}

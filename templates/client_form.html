@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if client else 'New' }} client · AW Client Report Portal{% endblock %}
+
+{% macro account_row(acct=None) %}
+<tr class="account-row">
+  <td>
+    <select name="account_owner" class="acct-owner">
+      <option value="client1" {{ 'selected' if acct and acct.owner == 'client1' }}>Client 1</option>
+      <option value="client2" {{ 'selected' if acct and acct.owner == 'client2' }}>Client 2</option>
+      <option value="joint" {{ 'selected' if acct and acct.owner == 'joint' }}>Joint</option>
+    </select>
+  </td>
+  <td>
+    <select name="account_category" class="acct-category">
+      {% for cat, label in [('retirement','Retirement'),('non_retirement','Non-Retirement'),('trust','Trust'),('liability','Liability')] %}
+      <option value="{{ cat }}" {{ 'selected' if acct and acct.category == cat }}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </td>
+  <td>
+    <select name="account_type">
+      {% for cat, types in account_types.items() %}
+      <optgroup label="{{ cat.replace('_',' ')|title }}">
+        {% for t in types %}
+        <option value="{{ t }}" {{ 'selected' if acct and acct.type == t }}>{{ t }}</option>
+        {% endfor %}
+      </optgroup>
+      {% endfor %}
+    </select>
+  </td>
+  <td><input type="text" name="account_last4" maxlength="8" placeholder="1234"
+             value="{{ acct.acct_last4 or '' if acct else '' }}"></td>
+  <td><input type="text" name="account_rate" inputmode="decimal" placeholder="%"
+             value="{{ acct.interest_rate if acct and acct.interest_rate is not none else '' }}"></td>
+  <td>
+    <select name="account_is_investment">
+      <option value="no" {{ 'selected' if not (acct and acct.is_investment) }}>No</option>
+      <option value="yes" {{ 'selected' if acct and acct.is_investment }}>Yes</option>
+    </select>
+  </td>
+  <td><button type="button" class="btn-remove" title="Remove">&times;</button></td>
+</tr>
+{% endmacro %}
+
+{% block content %}
+<div class="page-head">
+  <h1>{{ 'Edit client' if client else 'New client' }}</h1>
+  <a class="btn-ghost" href="{{ url_for('dashboard') if not client else url_for('client_detail', client_id=client.id) }}">Cancel</a>
+</div>
+
+<form method="post" class="stack">
+  <div class="card">
+    <h2>Household</h2>
+    <label class="checkbox">
+      <input type="checkbox" name="married" id="married" {{ 'checked' if client and client.married }}>
+      Married / two-person household
+    </label>
+
+    <div class="grid-2">
+      <div class="person">
+        <h3>Client 1</h3>
+        <label>Full name
+          <input type="text" name="client1_name" required value="{{ client.client1_name if client else '' }}">
+        </label>
+        <label>Date of birth
+          <input type="date" name="client1_dob" value="{{ client.client1_dob.isoformat() if client and client.client1_dob else '' }}">
+        </label>
+        <label>SSN (last 4)
+          <input type="text" name="client1_ssn_last4" maxlength="4" inputmode="numeric"
+                 value="{{ client.client1_ssn_last4 or '' if client else '' }}">
+        </label>
+      </div>
+      <div class="person" id="client2-block">
+        <h3>Client 2</h3>
+        <label>Full name
+          <input type="text" name="client2_name" value="{{ client.client2_name or '' if client else '' }}">
+        </label>
+        <label>Date of birth
+          <input type="date" name="client2_dob" value="{{ client.client2_dob.isoformat() if client and client.client2_dob else '' }}">
+        </label>
+        <label>SSN (last 4)
+          <input type="text" name="client2_ssn_last4" maxlength="4" inputmode="numeric"
+                 value="{{ client.client2_ssn_last4 or '' if client else '' }}">
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Static financials</h2>
+    <div class="grid-2">
+      <label>Monthly salary / take-home (Inflow)
+        <input type="text" name="monthly_salary" inputmode="decimal"
+               value="{{ client.monthly_salary|round(0)|int if client and client.monthly_salary else '' }}">
+      </label>
+      <label>Agreed monthly expense budget (Outflow)
+        <input type="text" name="monthly_expense_budget" inputmode="decimal"
+               value="{{ client.monthly_expense_budget|round(0)|int if client and client.monthly_expense_budget else '' }}">
+      </label>
+      <label>Sum of insurance deductibles
+        <input type="text" name="insurance_deductibles" inputmode="decimal"
+               value="{{ client.insurance_deductibles|round(0)|int if client and client.insurance_deductibles else '' }}">
+        <small class="hint">Reserve target = 6 &times; expenses + deductibles</small>
+      </label>
+      <label>Private reserve target override <span class="muted">(optional)</span>
+        <input type="text" name="private_reserve_target_override" inputmode="decimal"
+               value="{{ client.private_reserve_target_override|round(0)|int if client and client.private_reserve_target_override is not none else '' }}">
+        <small class="hint">Leave blank to auto-calculate</small>
+      </label>
+    </div>
+    <label>Trust property address <span class="muted">(for Zillow lookup)</span>
+      <input type="text" name="trust_address" value="{{ client.trust_address or '' if client else '' }}">
+    </label>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h2>Accounts &amp; liabilities</h2>
+      <button type="button" class="btn-secondary" id="add-account">+ Add account</button>
+    </div>
+    <p class="muted small">Retirement accounts must be owned by Client 1 or Client 2 (not joint) so spouse totals compute correctly.</p>
+    <table class="data-table accounts-table">
+      <thead>
+        <tr>
+          <th>Owner</th><th>Category</th><th>Type</th><th>Acct&nbsp;#4</th>
+          <th>Rate&nbsp;%</th><th>Investment?</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="accounts-body">
+        {% if client and client.accounts %}
+          {% for acct in client.accounts %}{{ account_row(acct) }}{% endfor %}
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <template id="account-row-template">{{ account_row() }}</template>
+
+  <div class="form-actions">
+    <button type="submit" class="btn-primary">{{ 'Save changes' if client else 'Create client' }}</button>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+<script>initClientForm();</script>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Sign in · AW Client Report Portal{% endblock %}
+{% block content %}
+<div class="login-wrap">
+  <div class="card login-card">
+    <div class="login-head">
+      <span class="brand-mark big">AW</span>
+      <h1>Client Report Portal</h1>
+      <p class="muted">Sign in to continue</p>
+    </div>
+    <form method="post" action="{{ url_for('login') }}">
+      <label>Email
+        <input type="email" name="email" autocomplete="username" required autofocus>
+      </label>
+      <label>Password
+        <input type="password" name="password" autocomplete="current-password" required>
+      </label>
+      <button type="submit" class="btn-primary full">Sign in</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

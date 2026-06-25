@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# Local database / instance data
+instance/
+*.db
+*.sqlite
+*.sqlite3
+/data/
+
+# Environment / secrets
+.env
+
+# Generated PDFs (local scratch)
+/out/
+*.pdf
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local tooling
+.claude/

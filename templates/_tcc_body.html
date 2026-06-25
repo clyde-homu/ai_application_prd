@@ -1,0 +1,105 @@
+{% from "_macros.html" import acct_bubble %}
+<div class="report-doc">
+  <div class="rpt-header">
+    <div class="rpt-kind">Total Client Chart · TCC</div>
+    <h1>{{ client.display_name }}</h1>
+    <div class="rpt-date">{{ report.report_date.strftime('%B %d, %Y') }} · Net worth overview</div>
+  </div>
+
+  <div class="info-row">
+    <div class="info-bubble">
+      <div class="nm">{{ client.client1_name }}</div>
+      <div class="meta">
+        {% if client.client1_age is not none %}Age {{ client.client1_age }}{% endif %}
+        {% if client.client1_dob %} · DOB {{ client.client1_dob.strftime('%m/%d/%Y') }}{% endif %}
+        {% if client.client1_ssn_last4 %}<br>SSN ···· {{ client.client1_ssn_last4 }}{% endif %}
+      </div>
+    </div>
+    {% if client.married and client.client2_name %}
+    <div class="info-bubble">
+      <div class="nm">{{ client.client2_name }}</div>
+      <div class="meta">
+        {% if client.client2_age is not none %}Age {{ client.client2_age }}{% endif %}
+        {% if client.client2_dob %} · DOB {{ client.client2_dob.strftime('%m/%d/%Y') }}{% endif %}
+        {% if client.client2_ssn_last4 %}<br>SSN ···· {{ client.client2_ssn_last4 }}{% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="rpt-section-title">Retirement</div>
+  <div class="tcc-columns">
+    <div class="tcc-col">
+      <div class="bubble-wrap">
+        {% for a in groups.client1_retirement %}{{ acct_bubble(a) }}{% endfor %}
+        {% if not groups.client1_retirement %}<span class="empty-note">No retirement accounts.</span>{% endif %}
+      </div>
+      <div class="summary-box">
+        <span class="s-lbl">{{ client.client1_name }} Retirement</span>
+        <span class="s-val">{{ c.client1_retirement_total|money }}</span>
+      </div>
+    </div>
+    {% if client.married and client.client2_name %}
+    <div class="tcc-col">
+      <div class="bubble-wrap">
+        {% for a in groups.client2_retirement %}{{ acct_bubble(a) }}{% endfor %}
+        {% if not groups.client2_retirement %}<span class="empty-note">No retirement accounts.</span>{% endif %}
+      </div>
+      <div class="summary-box">
+        <span class="s-lbl">{{ client.client2_name }} Retirement</span>
+        <span class="s-val">{{ c.client2_retirement_total|money }}</span>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="rpt-section-title">Non-Retirement</div>
+  <div class="bubble-wrap">
+    {% for a in groups.non_retirement %}{{ acct_bubble(a) }}{% endfor %}
+    {% if not groups.non_retirement %}<span class="empty-note">No non-retirement accounts.</span>{% endif %}
+  </div>
+  <div class="summary-box">
+    <span class="s-lbl">Non-Retirement Total</span>
+    <span class="s-val">{{ c.non_retirement_total|money }}</span>
+  </div>
+
+  <div class="rpt-section-title">Trust</div>
+  <div class="bubble-wrap">
+    {% if report.home_value %}
+    <div class="acct-bubble trust">
+      <div class="t">Residence (Trust)</div>
+      <div class="b">{{ report.home_value|money }}</div>
+      <div class="sub">{{ client.trust_address or 'Zillow value' }}</div>
+    </div>
+    {% endif %}
+    {% for a in groups.trust %}{{ acct_bubble(a) }}{% endfor %}
+    {% if not report.home_value and not groups.trust %}<span class="empty-note">No trust assets.</span>{% endif %}
+  </div>
+  <div class="summary-box">
+    <span class="s-lbl">Trust Total</span>
+    <span class="s-val">{{ c.trust_total|money }}</span>
+  </div>
+
+  <div class="summary-box grand">
+    <span class="s-lbl">Grand Total Net Worth</span>
+    <span class="s-val">{{ c.grand_total|money }}</span>
+  </div>
+
+  <div class="rpt-section-title">Liabilities <span style="font-size:11px;color:#6b7280;">(separate — not subtracted from net worth)</span></div>
+  <div class="bubble-wrap">
+    {% for a in groups.liabilities %}
+    <div class="acct-bubble liab">
+      <div class="t">{{ a.type }}{% if a.acct_last4 %} ····{{ a.acct_last4 }}{% endif %}</div>
+      <div class="b">{{ a.balance|money }}</div>
+      {% if a.interest_rate is not none %}<div class="sub">{{ a.interest_rate }}% interest</div>{% endif %}
+    </div>
+    {% endfor %}
+    {% if not groups.liabilities %}<span class="empty-note">No liabilities.</span>{% endif %}
+  </div>
+  {% if groups.liabilities %}
+  <div class="summary-box">
+    <span class="s-lbl">Liabilities Total</span>
+    <span class="s-val">{{ c.liabilities_total|money }}</span>
+  </div>
+  {% endif %}
+</div>
