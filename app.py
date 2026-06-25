@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 from datetime import date
+from functools import wraps
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -41,6 +42,10 @@ ACCOUNT_TYPES = {
     calc.TRUST: ["Trust Account", "Trust (Real Estate)"],
     calc.LIABILITY: ["Mortgage", "Auto Loan", "HELOC", "Personal Loan", "Other"],
 }
+
+# Team roles and the minimum password length enforced everywhere.
+USER_ROLES = ["admin", "planner", "assistant"]
+MIN_PASSWORD_LENGTH = 8
 
 
 # --------------------------------------------------------------------------- #
@@ -79,6 +84,19 @@ def parse_date(raw):
         return date.fromisoformat(raw)
     except ValueError:
         return None
+
+
+def admin_required(view):
+    """Allow only authenticated admins; everyone else gets 403."""
+
+    @wraps(view)
+    @login_required
+    def wrapped(*args, **kwargs):
+        if getattr(current_user, "role", None) != "admin":
+            abort(403)
+        return view(*args, **kwargs)
+
+    return wrapped
 
 
 # --------------------------------------------------------------------------- #
@@ -168,6 +186,84 @@ def register_routes(app: Flask) -> None:
     def logout():
         logout_user()
         return redirect(url_for("login"))
+
+    # ---- Profile (self-service password change) ------------------------- #
+    @app.route("/profile", methods=["GET", "POST"])
+    @login_required
+    def profile():
+        if request.method == "POST":
+            current = request.form.get("current_password", "")
+            new = request.form.get("new_password", "")
+            confirm = request.form.get("confirm_password", "")
+            if not current_user.check_password(current):
+                flash("Current password is incorrect.", "error")
+            elif len(new) < MIN_PASSWORD_LENGTH:
+                flash(f"New password must be at least {MIN_PASSWORD_LENGTH} characters.", "error")
+            elif new != confirm:
+                flash("New passwords do not match.", "error")
+            else:
+                current_user.set_password(new)
+                db.session.commit()
+                flash("Password updated.", "success")
+                return redirect(url_for("profile"))
+        return render_template("profile.html")
+
+    # ---- Team management (admin only) ----------------------------------- #
+    @app.route("/team")
+    @admin_required
+    def team():
+        users = db.session.query(User).order_by(User.name).all()
+        return render_template("team.html", users=users, roles=USER_ROLES)
+
+    @app.route("/team/add", methods=["POST"])
+    @admin_required
+    def team_add():
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        role = request.form.get("role", "planner").strip()
+        password = request.form.get("password", "")
+        if not name or not email:
+            flash("Name and email are required.", "error")
+        elif len(password) < MIN_PASSWORD_LENGTH:
+            flash(f"Password must be at least {MIN_PASSWORD_LENGTH} characters.", "error")
+        elif db.session.query(User).filter_by(email=email).first():
+            flash("A user with that email already exists.", "error")
+        else:
+            user = User(name=name, email=email,
+                        role=role if role in USER_ROLES else "planner")
+            user.set_password(password)
+            db.session.add(user)
+            db.session.commit()
+            flash(f"Added {name}.", "success")
+        return redirect(url_for("team"))
+
+    @app.route("/team/<int:user_id>/reset", methods=["POST"])
+    @admin_required
+    def team_reset(user_id):
+        user = db.get_or_404(User, user_id)
+        password = request.form.get("password", "")
+        if len(password) < MIN_PASSWORD_LENGTH:
+            flash(f"Password must be at least {MIN_PASSWORD_LENGTH} characters.", "error")
+        else:
+            user.set_password(password)
+            db.session.commit()
+            flash(f"Password reset for {user.name}.", "success")
+        return redirect(url_for("team"))
+
+    @app.route("/team/<int:user_id>/delete", methods=["POST"])
+    @admin_required
+    def team_delete(user_id):
+        user = db.get_or_404(User, user_id)
+        admin_count = db.session.query(User).filter_by(role="admin").count()
+        if user.id == current_user.id:
+            flash("You can't delete your own account.", "error")
+        elif user.role == "admin" and admin_count <= 1:
+            flash("Can't delete the last admin.", "error")
+        else:
+            db.session.delete(user)
+            db.session.commit()
+            flash(f"Removed {user.name}.", "success")
+        return redirect(url_for("team"))
 
     # ---- Dashboard ------------------------------------------------------ #
     @app.route("/")

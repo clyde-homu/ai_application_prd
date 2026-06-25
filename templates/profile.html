@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}My Profile · AW Client Report Portal{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>My Profile</h1>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h2>Account</h2>
+    <dl class="kv">
+      <dt>Name</dt><dd>{{ current_user.name }}</dd>
+      <dt>Email</dt><dd>{{ current_user.email }}</dd>
+      <dt>Role</dt><dd>{{ current_user.role|title }}</dd>
+    </dl>
+  </div>
+
+  <div class="card">
+    <h2>Change password</h2>
+    <form method="post" action="{{ url_for('profile') }}">
+      <label>Current password
+        <input type="password" name="current_password" autocomplete="current-password" required>
+      </label>
+      <label>New password
+        <input type="password" name="new_password" autocomplete="new-password" minlength="8" required>
+        <small class="hint">At least 8 characters.</small>
+      </label>
+      <label>Confirm new password
+        <input type="password" name="confirm_password" autocomplete="new-password" minlength="8" required>
+      </label>
+      <button type="submit" class="btn-primary">Update password</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

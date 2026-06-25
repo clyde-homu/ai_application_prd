@@ -166,6 +166,14 @@ input:focus, select:focus { outline: none; border-color: var(--blue-soft); box-s
   overflow-x: auto;
 }
 
+/* Team management */
+.inline-actions { display: inline-block; }
+.inline-actions summary { cursor: pointer; color: var(--blue-soft); font-size: 13px; list-style: none; }
+.inline-actions summary::-webkit-details-marker { display: none; }
+.inline-form { display: inline; margin-left: 14px; }
+.reset-form { display: flex; gap: 8px; margin-top: 8px; }
+.reset-form input { width: 170px; margin-top: 0; }
+
 @media (max-width: 860px) {
   .grid-2, .report-grid { grid-template-columns: 1fr; }
   .report-side { position: static; }

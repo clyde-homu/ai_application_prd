@@ -65,7 +65,23 @@ flask --app app run --debug   # http://127.0.0.1:5000
 ```
 
 Default seeded login: `andrew@windbrook.example` / `changeme123`
-(override with `SEED_TEAM_PASSWORD`). **Change it after first login.**
+(override with `SEED_TEAM_PASSWORD`). **Change it after first login** under **My Profile**.
+
+## Managing accounts
+
+- **Change your own password** — click your name in the top bar to open **My Profile**,
+  then enter your current password and a new one (min 8 characters).
+- **Manage the team** (admins only) — the **Team** link in the top bar lets an admin add or
+  remove members and reset anyone's password, so onboarding a new user never requires the
+  `seed.py` script or shell access. You can't delete your own account or the last admin (prevents
+  lockout). The seed gives **Andrew** the `admin` role; adjust roles as needed.
+- **Emergency recovery** — if all admin passwords are lost, reset one from a shell:
+  ```bash
+  python -c "from app import app; from models import db, User; app.app_context().push(); \
+  u=db.session.query(User).filter_by(email='andrew@windbrook.example').first(); \
+  u.set_password('NewPassword123'); db.session.commit(); print('reset')"
+  ```
+  (On Railway, run the same snippet from the service shell.)
 
 Run the tests:
 

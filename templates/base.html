@@ -15,7 +15,10 @@
     </a>
     <nav class="topnav">
       <a href="{{ url_for('dashboard') }}">Clients</a>
-      <span class="who">{{ current_user.name }}</span>
+      {% if current_user.role == 'admin' %}
+      <a href="{{ url_for('team') }}">Team</a>
+      {% endif %}
+      <a class="who" href="{{ url_for('profile') }}" title="My profile">{{ current_user.name }}</a>
       <a class="btn-ghost" href="{{ url_for('logout') }}">Sign out</a>
     </nav>
   </header>

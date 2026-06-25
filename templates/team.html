@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Team · AW Client Report Portal{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Team</h1>
+    <p class="muted">{{ users|length }} member{{ '' if users|length == 1 else 's' }}</p>
+  </div>
+</div>
+
+<div class="card">
+  <table class="data-table">
+    <thead>
+      <tr><th>Name</th><th>Email</th><th>Role</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>{{ u.name }}{% if u.id == current_user.id %} <span class="muted">(you)</span>{% endif %}</td>
+        <td>{{ u.email }}</td>
+        <td>{{ u.role|title }}</td>
+        <td class="row-actions">
+          <details class="inline-actions">
+            <summary>Reset password</summary>
+            <form method="post" action="{{ url_for('team_reset', user_id=u.id) }}" class="reset-form">
+              <input type="password" name="password" placeholder="New password" minlength="8" required>
+              <button type="submit" class="btn-secondary">Set</button>
+            </form>
+          </details>
+          {% if u.id != current_user.id %}
+          <form method="post" action="{{ url_for('team_delete', user_id=u.id) }}" class="inline-form"
+                onsubmit="return confirm('Remove {{ u.name }}?');">
+            <button type="submit" class="btn-danger-link">Remove</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2>Add member</h2>
+  <form method="post" action="{{ url_for('team_add') }}">
+    <div class="grid-2">
+      <label>Full name
+        <input type="text" name="name" required>
+      </label>
+      <label>Email
+        <input type="email" name="email" required>
+      </label>
+      <label>Role
+        <select name="role">
+          {% for r in roles %}<option value="{{ r }}">{{ r|title }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Temporary password
+        <input type="password" name="password" minlength="8" required>
+        <small class="hint">At least 8 characters. The member can change it under My Profile.</small>
+      </label>
+    </div>
+    <button type="submit" class="btn-primary">Add member</button>
+  </form>
+</div>
+{% endblock %}
