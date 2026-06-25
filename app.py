@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 from flask import (
     Flask,
     abort,
+    current_app,
     flash,
     redirect,
     render_template,
@@ -360,15 +361,13 @@ def register_routes(app: Flask) -> None:
     @login_required
     def report_sacs_pdf(report_id):
         report = db.get_or_404(Report, report_id)
-        pdf_bytes = render_sacs_pdf(report)
-        return _pdf_response(pdf_bytes, report, "SACS")
+        return _pdf_or_redirect(report, "SACS", render_sacs_pdf)
 
     @app.route("/reports/<int:report_id>/tcc.pdf")
     @login_required
     def report_tcc_pdf(report_id):
         report = db.get_or_404(Report, report_id)
-        pdf_bytes = render_tcc_pdf(report)
-        return _pdf_response(pdf_bytes, report, "TCC")
+        return _pdf_or_redirect(report, "TCC", render_tcc_pdf)
 
     @app.route("/reports/<int:report_id>/delete", methods=["POST"])
     @login_required
@@ -460,6 +459,28 @@ def _apply_account_balances(report: Report, client: Client) -> None:
         report.balances.append(
             AccountBalance(account_id=acct.id, balance=balance, cash_balance=cash)
         )
+
+
+def _pdf_or_redirect(report: Report, kind: str, renderer):
+    """Render a PDF, or fall back to the preview with a clear message.
+
+    PDF generation needs WeasyPrint's native libraries (Pango/Cairo/GTK). When
+    they're missing — typically a local Windows dev box without the GTK runtime —
+    we flash an explanation and send the user back to the on-screen report rather
+    than returning a raw 500. The Railway deployment installs these libraries.
+    """
+    try:
+        pdf_bytes = renderer(report)
+    except Exception:  # noqa: BLE001 - surface any render/native-lib failure gracefully
+        current_app.logger.exception("%s PDF generation failed", kind)
+        flash(
+            "PDF download isn't available on this machine — WeasyPrint's system "
+            "libraries (Pango/Cairo/GTK) aren't installed here. It works on the "
+            "Railway deployment. For now, use the on-screen report below.",
+            "error",
+        )
+        return redirect(url_for("report_preview", report_id=report.id))
+    return _pdf_response(pdf_bytes, report, kind)
 
 
 def _pdf_response(pdf_bytes: bytes, report: Report, kind: str):

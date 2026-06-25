@@ -8,7 +8,41 @@ libraries (pango/cairo) to be installed.
 
 from __future__ import annotations
 
+import os
+
 from flask import render_template
+
+# Where the GTK3 runtime DLLs live on Windows. WeasyPrint resolves dependent
+# DLLs (glib, libffi, …) via PATH, so add_dll_directory alone is not enough.
+_WINDOWS_GTK_DIRS = [
+    r"C:\Program Files\GTK3-Runtime Win64\bin",
+    r"C:\Program Files (x86)\GTK3-Runtime Win64\bin",
+]
+
+
+def _ensure_native_libs() -> None:
+    """On Windows, make WeasyPrint's GTK runtime DLLs discoverable.
+
+    No-op on Linux/macOS (e.g. Railway), where the libraries are installed
+    system-wide by ``nixpacks.toml``. Set ``WEASYPRINT_DLL_DIRECTORIES`` to
+    override the location.
+    """
+    if os.name != "nt":
+        return
+    candidates = []
+    override = os.environ.get("WEASYPRINT_DLL_DIRECTORIES")
+    if override:
+        candidates.extend(override.split(os.pathsep))
+    candidates.extend(_WINDOWS_GTK_DIRS)
+    for directory in candidates:
+        if directory and os.path.isdir(directory):
+            try:
+                os.add_dll_directory(directory)
+            except (OSError, AttributeError):
+                pass
+            if directory.lower() not in os.environ.get("PATH", "").lower():
+                os.environ["PATH"] = directory + os.pathsep + os.environ.get("PATH", "")
+            return
 
 
 def _build_context(report) -> dict:
@@ -21,6 +55,7 @@ def _build_context(report) -> dict:
 
 
 def _html_to_pdf(html: str) -> bytes:
+    _ensure_native_libs()
     from weasyprint import HTML  # lazy import — needs native libs
 
     return HTML(string=html).write_pdf()

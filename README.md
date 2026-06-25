@@ -50,9 +50,16 @@ railway.json       Railway build/deploy config
 ## Local development
 
 > WeasyPrint needs native libraries (Pango, Cairo, GDK-Pixbuf). On Linux/macOS
-> they install cleanly. On **Windows**, install the GTK runtime (see the
-> [WeasyPrint docs](https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#windows));
-> the app, preview, and tests all run without it — only PDF *download* needs it.
+> they install cleanly. The app, preview, and tests all run without them — only
+> PDF *download* needs them; if they're missing the download buttons show a clear
+> message instead of erroring.
+>
+> **Windows:** install the GTK3 runtime, then PDF download works automatically —
+> `pdf.py` auto-detects `C:\Program Files\GTK3-Runtime Win64\bin` (override with
+> the `WEASYPRINT_DLL_DIRECTORIES` env var):
+> ```powershell
+> winget install --id tschoonj.GTKForWindows -e
+> ```
 
 ```bash
 python -m venv .venv
